@@ -265,12 +265,29 @@ func TestCoinSend(t *testing.T) {
 	require.Equal(t, int64(1), mycoins.Amount.Int64())
 
 	// test failure with too little gas
-	res, body, _ = doSendWithGas(t, port, seed, name, password, addr, 100)
+	res, body, _ = doSendWithGas(t, port, seed, name, password, addr, 100, false)
 	require.Equal(t, http.StatusInternalServerError, res.StatusCode, body)
 
 	// test success with just enough gas
-	res, body, _ = doSendWithGas(t, port, seed, name, password, addr, 3000)
+	res, body, _ = doSendWithGas(t, port, seed, name, password, addr, 3000, false)
+}
+
+func TestCoinSendGenerateOnly(t *testing.T) {
+	name, password := "test", "1234567890"
+	addr, seed := CreateAddr(t, "test", password, GetKeyBase(t))
+	cleanup, _, port := InitializeTestLCD(t, 1, []sdk.AccAddress{addr})
+	defer cleanup()
+	// create TX
+	res, body, _ := doSendWithGas(t, port, seed, name, password, addr, 0, true)
+	t.Log(body)
+	//tests.WaitForHeight(resultTx.Height+1, port)
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
+	var msg auth.StdSignMsg
+	require.Nil(t, cdc.UnmarshalJSON([]byte(body), &msg))
+	require.Equal(t, msg.Sequence, int64(0))
+	require.Equal(t, len(msg.Msgs), 1)
+	require.Equal(t, msg.Msgs[0].Type(), "bank")
+	require.Equal(t, msg.Msgs[0].GetSigners(), []sdk.AccAddress{addr})
 }
 
 func TestIBCTransfer(t *testing.T) {
@@ -720,7 +737,7 @@ func getAccount(t *testing.T, port string, addr sdk.AccAddress) auth.Account {
 	return acc
 }
 
-func doSendWithGas(t *testing.T, port, seed, name, password string, addr sdk.AccAddress, gas int64) (res *http.Response, body string, receiveAddr sdk.AccAddress) {
+func doSendWithGas(t *testing.T, port, seed, name, password string, addr sdk.AccAddress, gas int64, generateOnly bool) (res *http.Response, body string, receiveAddr sdk.AccAddress) {
 
 	// create receive address
 	kb := client.MockKeyBase()
@@ -754,12 +771,16 @@ func doSendWithGas(t *testing.T, port, seed, name, password string, addr sdk.Acc
 		"chain_id":"%s"
 	}`, gasStr, name, password, accnum, sequence, coinbz, chainID))
 
-	res, body = Request(t, port, "POST", fmt.Sprintf("/accounts/%s/send", receiveAddr), jsonStr)
+	url := fmt.Sprintf("/accounts/%s/send", receiveAddr)
+	if generateOnly {
+		url += "?generate-only=true"
+	}
+	res, body = Request(t, port, "POST", url, jsonStr)
 	return
 }
 
 func doSend(t *testing.T, port, seed, name, password string, addr sdk.AccAddress) (receiveAddr sdk.AccAddress, resultTx ctypes.ResultBroadcastTxCommit) {
-	res, body, receiveAddr := doSendWithGas(t, port, seed, name, password, addr, 0)
+	res, body, receiveAddr := doSendWithGas(t, port, seed, name, password, addr, 0, false)
 	require.Equal(t, http.StatusOK, res.StatusCode, body)
 
 	err := cdc.UnmarshalJSON([]byte(body), &resultTx)

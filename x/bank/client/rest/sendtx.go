@@ -85,6 +85,16 @@ func SendRequestHandlerFn(cdc *wire.Codec, kb keys.Keybase, cliCtx context.CLICo
 			Sequence:      m.Sequence,
 		}
 
+		if utils.HasGenerateOnlyArg(r.URL) {
+			output, err := utils.GenerateAndMarshallStdSignMsgJSON(txCtx, []sdk.Msg{msg})
+			if err != nil {
+				utils.WriteErrorResponse(&w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			w.Write(output)
+			return
+		}
+
 		if m.Gas == 0 {
 			newCtx, err := utils.EnrichCtxWithGas(txCtx, cliCtx, m.LocalAccountName, m.Password, []sdk.Msg{msg})
 			if err != nil {
