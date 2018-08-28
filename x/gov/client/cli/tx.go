@@ -99,6 +99,13 @@ $ gaiacli gov submit-proposal --title="Test Proposal" --description="My awesome 
 			}
 
 			msg := gov.NewMsgSubmitProposal(proposal.Title, proposal.Description, proposalType, fromAddr, amount)
+			if cliCtx.GenerateOnly {
+				json, err := utils.MarshalStdSignMsgJSON(txCtx, cliCtx, []sdk.Msg{msg})
+				if err == nil {
+					fmt.Printf("%s\n", json)
+				}
+				return err
+			}
 
 			err = msg.ValidateBasic()
 			if err != nil {
@@ -177,7 +184,13 @@ func GetCmdDeposit(cdc *wire.Codec) *cobra.Command {
 			}
 
 			msg := gov.NewMsgDeposit(depositerAddr, proposalID, amount)
-
+			if cliCtx.GenerateOnly {
+				json, err := utils.MarshalStdSignMsgJSON(txCtx, cliCtx, []sdk.Msg{msg})
+				if err == nil {
+					fmt.Printf("%s\n", json)
+				}
+				return err
+			}
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -221,7 +234,13 @@ func GetCmdVote(cdc *wire.Codec) *cobra.Command {
 			}
 
 			msg := gov.NewMsgVote(voterAddr, proposalID, byteVoteOption)
-
+			if cliCtx.GenerateOnly {
+				json, err := utils.MarshalStdSignMsgJSON(txCtx, cliCtx, []sdk.Msg{msg})
+				if err == nil {
+					fmt.Printf("%s\n", json)
+				}
+				return err
+			}
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
