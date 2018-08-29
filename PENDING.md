@@ -33,12 +33,14 @@ FEATURES
 
 * Gaia REST API (`gaiacli advanced rest-server`)
   * [lcd] Endpoints to query staking pool and params
+  * [lcd] \#2110 Add support for `simulate=true` requests query argument to endpoints that send txs to run simulations of transactions
 
 * Gaia CLI  (`gaiacli`)
   * [cli] Cmds to query staking pool and params
   * [gov][cli] #2062 added `--proposal` flag to `submit-proposal` that allows a JSON file containing a proposal to be passed in
   * [cli] \#2047 Setting the --gas flag value to 0 triggers a simulation of the tx before the actual execution. The gas estimate obtained via the simulation will be used as gas limit in the actual execution.
   * [cli] \#2047 The --gas-adjustment flag can be used to adjust the estimate obtained via the simulation triggered by --gas=0.
+  * [cli] \#2110 Add --dry-run flag to perform a simulation of a transaction without broadcasting it. The --gas flag is ignored as gas would be automatically estimated.
 
 * Gaia
 
